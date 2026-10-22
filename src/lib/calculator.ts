@@ -10,7 +10,7 @@ export interface PartnerCatalog {
   partner: { slug: string; name: string; logoUrl: string | null };
   sizes: { id: Size; name: string }[];
   oneOffs: { id: string; name: string; prices: PriceBySize; addOnIds: string[] }[];
-  addOns: { id: string; name: string; prices: PriceBySize }[];
+  addOns: { id: string; name: string; prices: PriceBySize; description?: string }[];
   mileage: { ratePerKm: number; freeKm: number };
   /** Bookable dates (YYYY-MM-DD), set by an admin. */
   dates: string[];

@@ -200,7 +200,7 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
               ) : catalog.member ? (
                 <span id="member-help" role="status" className="text-[13px] font-semibold text-success">Member prices applied.</span>
               ) : (
-                <span id="member-help" className="text-[13px] text-grey-500">Members get special prices (one booking per day). Leave it empty for the normal price.</span>
+                <span id="member-help" className="text-[13px] text-grey-500">Members of {normal.partner.name} get a special rate when they enter their ID number (one booking per member per day). Leave it empty for the normal price.</span>
               )}
             </div>
           </Section>
@@ -286,8 +286,11 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
                           <label key={a.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-[10px] border border-grey-200 px-4 py-2.5 has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50">
                             <input type="checkbox" className="size-5 accent-orange-600" checked={car.addOnIds.includes(a.id)}
                               onChange={(e) => changeCar(i, { addOnIds: e.target.checked ? [...car.addOnIds, a.id] : car.addOnIds.filter((x) => x !== a.id) })} />
-                            <span className="grow font-semibold text-grey-900">{a.name}</span>
-                            <span className="font-bold text-grey-900">+ {rm(a.prices[id.size!])}</span>
+                            <span className="flex grow flex-col">
+                              <span className="font-semibold text-grey-900">{a.name}</span>
+                              {a.description && <span className="text-[13px] text-grey-500">{a.description}</span>}
+                            </span>
+                            <span className="whitespace-nowrap font-bold text-grey-900">+ {rm(a.prices[id.size!])}</span>
                           </label>
                         ))}
                       </div>
