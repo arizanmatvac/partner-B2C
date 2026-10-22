@@ -96,12 +96,15 @@ async function call<T>(slug: string, path: string, body?: unknown): Promise<T | 
   if (!res.ok) {
     if (res.status === 400 && data.error) throw new CalculatorError(data.error);
     console.error("[calculator]", res.status, path, data.error);
-    throw new CalculatorError("Something went wrong. Please try again.");
+    throw new CalculatorError(GENERIC_ERROR);
   }
   return data as T;
 }
 
 export class CalculatorError extends Error {}
+
+/** What the customer sees when the calculator fails for a reason they can't fix. */
+export const GENERIC_ERROR = "Something went wrong. Please try again.";
 
 export const getCatalog = (slug: string) => call<PartnerCatalog>(slug, "/catalog");
 
@@ -120,6 +123,12 @@ export const previewQuote = (slug: string, body: QuoteRequest) =>
 export async function bookQuote(slug: string, id: string, body: BookingRequest) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   return (await call<{ quote: PublicQuote }>(slug, `/quotes/${id}/confirm`, body))?.quote ?? null;
+}
+
+/** Payment failed or abandoned: the calculator deletes the booking's invoice, payment link and quote. */
+export async function cancelBooking(slug: string, id: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  return call<{ ok: true }>(slug, `/quotes/${id}/cancel`, {});
 }
 
 export async function saveQuote(slug: string, body: QuoteRequest) {

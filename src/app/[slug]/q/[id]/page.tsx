@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCatalog, getQuote } from "@/lib/calculator";
 import { lineAmount, rm } from "@/lib/format";
 import { PartnerHeader } from "../../PartnerHeader";
 import { BookButton } from "./BookButton";
+import { CancelBooking } from "./CancelBooking";
 import { ShareButtons } from "./ShareButtons";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +25,17 @@ const visit = (iso: string) =>
   new Date(iso).toLocaleString("en-MY", { ...MY, weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true });
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-MY", { ...MY, weekday: "long", day: "numeric", month: "long" });
 
-export default async function QuotePage({ params }: PageProps<"/[slug]/q/[id]">) {
+/** HitPay's `status` on the way back when the customer didn't pay. */
+const NOT_PAID = ["failed", "canceled", "cancelled", "expired"];
+
+export default async function QuotePage({ params, searchParams }: PageProps<"/[slug]/q/[id]">) {
   const { slug, id } = await params;
+  const { status } = await searchParams;
   const [catalog, q] = await Promise.all([getCatalog(slug), getQuote(slug, id)]);
-  if (!catalog || !q) notFound();
+  if (!catalog) notFound();
+  // Unpaid bookings are deleted (failed payment, cancelled, expired): start a new one.
+  if (!q) redirect(`/${slug}`);
+  const paymentFailed = q.status === "confirmed" && typeof status === "string" && NOT_PAID.includes(status.toLowerCase());
   const sizeName = (s: string) => catalog.sizes.find((x) => x.id === s)?.name ?? s;
 
   return (
@@ -105,8 +113,11 @@ export default async function QuotePage({ params }: PageProps<"/[slug]/q/[id]">)
               <b>{q.confirmedAt ? visit(new Date(new Date(q.confirmedAt).getTime() + PAYMENT_WINDOW_HOURS * 3_600_000).toISOString()) : "the payment link expires"}</b>.
               Pay to confirm it.
             </p>
-            <a href={q.paymentUrl} className="btn-primary h-14 text-base text-white no-underline hover:text-white">Pay {rm(q.total)} now</a>
-            <span className="text-[13px] text-grey-500">Already paid? Refresh this page in a minute.</span>
+            {!paymentFailed && (
+              <a href={q.paymentUrl} className="btn-primary h-14 text-base text-white no-underline hover:text-white">Pay {rm(q.total)} now</a>
+            )}
+            <CancelBooking slug={slug} id={q.id} auto={paymentFailed} />
+            <span className="text-[13px] text-grey-500">Already paid? Refresh this page in a minute. Cancelling deletes this booking and its invoice.</span>
           </div>
         )}
 

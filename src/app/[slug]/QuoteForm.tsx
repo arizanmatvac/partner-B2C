@@ -21,6 +21,15 @@ interface Car {
   addOnIds: string[];
 }
 
+/** The form as it was when Pay & Book Now was pressed, kept in this tab to try again after a failed payment. */
+const savedKey = (slug: string) => `matvac-booking:${slug}`;
+interface SavedForm {
+  cars: Car[];
+  details: Record<"serviceDate" | "customerName" | "customerPhone" | "customerEmail" | "customerAddress", string>;
+  memberId: string;
+  pricedAddress: string;
+}
+
 const NEW_CAR: Car = { makePick: "", modelPick: "", makeText: "", modelText: "", plate: "", size: "", packageId: "", addOnIds: [] };
 const plateOk = (p: string) => p.replace(/[^a-z0-9]/gi, "").length >= 2;
 
@@ -41,8 +50,32 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
   const [priced, setPriced] = useState<{ key: string; lines: Line[]; total: number } | null>(null);
   const [priceError, setPriceError] = useState<{ key: string; msg: string } | null>(null);
   const [paying, setPaying] = useState(false);
-  const [error, setError] = useState<{ msg: string; savedId?: string } | null>(null);
+  const [error, setError] = useState("");
+  const [retrying, setRetrying] = useState(false);
   const request = useRef(0);
+
+  // Back after a failed or cancelled payment (?retry): fill the form in again as it was.
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).has("retry")) return;
+    let saved: SavedForm | null = null;
+    try {
+      saved = JSON.parse(sessionStorage.getItem(savedKey(slug)) ?? "null");
+    } catch {
+      // nothing saved (private tab, another device): the form starts empty
+    }
+    /* eslint-disable react-hooks/set-state-in-effect -- restoring from sessionStorage, only readable after hydration */
+    setRetrying(true);
+    if (!saved) return;
+    setCars(saved.cars);
+    setDetails(saved.details);
+    setPricedAddress(saved.pricedAddress);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    if (saved.memberId) {
+      const id = saved.memberId;
+      setMemberId(id);
+      memberAction(slug, id).then((res) => { if (res.ok) setCatalog(res.data); });
+    }
+  }, [slug]);
 
   const makes = useMemo(() => [...new Set(catalog.cars.map((c) => c.make))], [catalog.cars]);
   const sizeName = (s: string) => catalog.sizes.find((x) => x.id === s)?.name ?? s;
@@ -109,7 +142,13 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
 
   async function pay() {
     setPaying(true);
-    setError(null);
+    setError("");
+    const form: SavedForm = { cars, details, memberId: appliedId ?? "", pricedAddress };
+    try {
+      sessionStorage.setItem(savedKey(slug), JSON.stringify(form));
+    } catch {
+      // storage blocked: a failed payment just means filling the form in again
+    }
     const { serviceDate, customerName, customerPhone, customerEmail, customerAddress } = details;
     const res = await payAction(slug, { serviceDate, customerName, customerPhone, customerEmail, customerAddress, services, memberId: appliedId });
     if (res.ok) {
@@ -117,12 +156,17 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
       return router.push(`/${slug}/q/${res.data.id}`);
     }
     setPaying(false);
-    setError({ msg: res.error, savedId: res.id });
+    setError(res.error);
   }
 
   return (
     <form className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-8" onSubmit={(e) => { e.preventDefault(); pay(); }}>
       <div className="flex min-w-0 flex-col gap-5">
+        {retrying && (
+          <p role="status" className="m-0 rounded-[14px] bg-warning-bg px-5 py-4 text-sm font-semibold text-warning-ink">
+            Your payment didn&apos;t go through, so nothing was booked or charged. Check your details and press Pay &amp; Book Now to try again.
+          </p>
+        )}
         <Section num="01" title="PICK A DATE">
           {catalog.dates.length ? (
             <div className="flex flex-col gap-1.5">
@@ -326,12 +370,7 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
             <span className="font-display text-[40px] tracking-[-0.01em] text-navy-900">{price ? rm(price.total) : "—"}</span>
           </div>
           {catalog.member && price && <span className="-mt-3 text-right text-[13px] font-semibold text-success">Member price</span>}
-          {error && (
-            <p role="alert" className="m-0 text-sm font-semibold text-danger">
-              {error.msg}
-              {error.savedId && <> Your booking details are saved: <a href={`/${slug}/q/${error.savedId}`}>try paying again</a>.</>}
-            </p>
-          )}
+          {error && <p role="alert" className="m-0 text-sm font-semibold text-danger">{error}</p>}
           <button type="submit" disabled={paying || !price || !catalog.dates.length} className="btn-primary h-14 text-base">
             {paying ? "Booking… this can take up to a minute" : price ? `Pay & Book Now · ${rm(price.total)}` : "Pay & Book Now"}
           </button>
