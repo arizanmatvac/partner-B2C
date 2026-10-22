@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+/* Matvac Detailing Design System tokens (design/ds/matvac/tokens.json). Light theme only, per the brand. */
+@theme {
+  --color-orange-50: #fff3ec;
+  --color-orange-100: #fde0d2;
+  --color-orange-300: #f79364;
+  --color-orange-500: #f15c25;
+  --color-orange-600: #d4491b;
+  --color-orange-700: #ac3813;
+  --color-orange-900: #5e1d0a;
+
+  --color-navy-900: #141a2e;
+  --color-navy-800: #1c2440;
+  --color-navy-700: #293357;
+  --color-navy-500: #455076;
+  --color-navy-300: #7c87ac;
+  --color-navy-100: #dde1ee;
+
+  --color-grey-900: #1b1c20;
+  --color-grey-700: #43454c;
+  --color-grey-500: #71747c;
+  --color-grey-300: #b4b6bd;
+  --color-grey-200: #d8dadf;
+  --color-grey-100: #eeeff2;
+  --color-grey-50: #f7f7f9;
+
+  --color-success: #2e7d4f;
+  --color-success-bg: #e4f2e9;
+  --color-warning: #c8821a;
+  --color-warning-bg: #fdf0dc;
+  --color-warning-ink: #7a4b08;
+  --color-danger: #c4341f;
+  --color-danger-bg: #fbe6e2;
+
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-display: var(--font-archivo-black), var(--font-archivo), sans-serif;
+
+  --radius-s: 4px;
+  --radius-m: 8px;
+  --radius-card: 10px;
+  --radius-l: 14px;
+
+  --shadow-card: 0 1px 2px rgba(14, 14, 16, 0.06), 0 8px 24px rgba(14, 14, 16, 0.08);
+  --shadow-hard-orange: 3px 3px 0 #ac3813;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    background: var(--color-grey-50);
+    color: var(--color-grey-900);
+    font-family: var(--font-sans);
+  }
+  a {
+    color: var(--color-orange-700);
+  }
+  a:hover {
+    color: var(--color-orange-900);
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible {
+    outline: 3px solid var(--color-orange-300);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .field {
+    height: 46px;
+    width: 100%;
+    padding: 0 14px;
+    border: 1px solid var(--color-grey-300);
+    border-radius: var(--radius-m);
+    background: #fff;
+    font-size: 15px;
+    color: var(--color-grey-900);
+    outline: none;
+  }
+  .field:focus {
+    border-color: var(--color-orange-500);
+    box-shadow: 0 0 0 3px var(--color-orange-100);
+  }
+  .label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-grey-700);
+  }
+  .card {
+    background: #fff;
+    border: 1px solid var(--color-grey-200);
+    border-radius: var(--radius-l);
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: var(--radius-card);
+    background: var(--color-orange-600);
+    color: #fff;
+    font-weight: 700;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-orange-700);
+  }
+  .btn-primary:disabled {
+    opacity: 0.6;
+  }
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 2px solid var(--color-navy-900);
+    border-radius: var(--radius-m);
+    background: #fff;
+    color: var(--color-navy-900);
+    font-weight: 700;
+  }
+  .btn-outline:hover:not(:disabled) {
+    background: var(--color-grey-50);
+  }
+  .btn-outline:disabled {
+    opacity: 0.5;
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--color-grey-500);
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}
