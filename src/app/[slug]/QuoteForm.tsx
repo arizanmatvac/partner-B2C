@@ -67,7 +67,8 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
     setRetrying(true);
     if (!saved) return;
     setCars(saved.cars);
-    setDetails(saved.details);
+    // The date may have filled up since: then it's picked again.
+    setDetails({ ...saved.details, serviceDate: normal.dates.includes(saved.details.serviceDate) ? saved.details.serviceDate : "" });
     setPricedAddress(saved.pricedAddress);
     /* eslint-enable react-hooks/set-state-in-effect */
     if (saved.memberId) {
@@ -75,7 +76,7 @@ export function QuoteForm({ slug, catalog: normal }: { slug: string; catalog: Pa
       setMemberId(id);
       memberAction(slug, id).then((res) => { if (res.ok) setCatalog(res.data); });
     }
-  }, [slug]);
+  }, [slug, normal.dates]);
 
   const makes = useMemo(() => [...new Set(catalog.cars.map((c) => c.make))], [catalog.cars]);
   const sizeName = (s: string) => catalog.sizes.find((x) => x.id === s)?.name ?? s;
